@@ -43,6 +43,8 @@ public class QQBotOpenApi {
 
     // 发送消息 现在发的是文本
     public void doSendMsg(Payload<SendRequest> payload, String msg) throws IOException {
+        //处理屏蔽词
+        msg =  msg.replace("习近平新时代中国特色社会主义思想概论","习概");
         String authorization = doGetCertificate();
         String eventId = payload.getId();
         SendRequest d = payload.getD();

@@ -5,11 +5,14 @@ import com.alibaba.fastjson2.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hrc.bot.config.BotConfig;
 import com.hrc.bot.entity.Payload;
+import com.hrc.bot.entity.hut.grade.resp.DataDTO;
+import com.hrc.bot.entity.hut.grade.resp.GradeResp;
 import com.hrc.bot.entity.sendrequest.SendRequest;
 import com.hrc.bot.entity.validate.CustomPrivateKey;
 import com.hrc.bot.entity.validate.CustomPublicKey;
 import com.hrc.bot.entity.validate.ValidationRequest;
 import com.hrc.bot.entity.validate.ValidationResponse;
+import com.hrc.bot.openapi.HutOpenApi;
 import com.hrc.bot.openapi.QQBotOpenApi;
 import jakarta.annotation.Resource;
 import org.bouncycastle.crypto.KeyGenerationParameters;
@@ -24,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,10 +37,15 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.util.HexFormat;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/webhook")
 public class BotController {
+    @Resource
+    private HutOpenApi hutOpenApi;
     @Resource
     private QQBotOpenApi qQBotOpenApi;
 
@@ -49,7 +58,9 @@ public class BotController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<?> handleValidation(@RequestBody String rawBody) {
+    public ResponseEntity<?> handleValidation(@RequestBody String rawBody,
+                                              @RequestHeader("X-Signature-Ed25519") String sig,
+                                              @RequestHeader("X-Signature-Timestamp") String timestamp) {
         logger.info(rawBody);
         try {
             String seed = prepareSeed(BotConfig.APP_SECRET);
@@ -57,21 +68,43 @@ public class BotController {
             Payload<?> payload = JSON.parseObject(rawBody, Payload.class);
             switch (payload.getOp()) {
                 case 0 -> {
-                    String eventType = payload.getT();
-                    if ("C2C_MESSAGE_CREATE".equals(eventType)) {
-                        Payload<SendRequest> sendRequestPayload = JSON.parseObject(rawBody, new TypeReference<Payload<SendRequest>>() {
-                        });
-                        String msg  = " 你好";
-                        qQBotOpenApi.doSendMsg(sendRequestPayload,msg);
-                    }
+                    boolean isValid = verifySignature(sig, timestamp, rawBody.getBytes(StandardCharsets.UTF_8), keyPair.getPublic().getEncoded());
+                    if (isValid) {
+                        String eventType = payload.getT();
+                        if ("C2C_MESSAGE_CREATE".equals(eventType)) {
+                            String msg  = " 你好";
 
-                    // boolean isValid = verifySignature(sig, timestamp, rawBody.getBytes(StandardCharsets.UTF_8), keyPair.getPublic().getEncoded());
-                    // if (isValid) {
-                    //
-                    //
-                    // }
+                            Payload<SendRequest> sendRequestPayload = JSON.parseObject(rawBody, new TypeReference<>() {
+                            });
+                            SendRequest d = sendRequestPayload.getD();
+                            String content = d.getContent();
+                            if ("查询电费".equals(content)) {
+
+                            } else if ("查询成绩".equals(content)) {
+
+                            } else if ("查询本学期成绩".equals(content)) {
+                                String nowGrade = hutOpenApi.getNowGrade();
+                                GradeResp gradeResp = JSON.parseObject(nowGrade, GradeResp.class);
+                                DataDTO data = gradeResp.getData().get(0);
+                                Set<String> gradeSet = data.getAchievement().stream().map(achievementDTO -> {
+                                    //课程名
+                                    String courseName = achievementDTO.getCourseName();
+                                    //成绩
+                                    String fraction = achievementDTO.getFraction();
+                                    return courseName + ":" + fraction;
+                                }).collect(Collectors.toSet());
+                                StringJoiner sj = new StringJoiner("\n");
+                                for (String grade : gradeSet) {
+                                    sj.add(grade);
+                                }
+                                msg = sj.toString();
+                                logger.info(msg);
+                            }
+                            qQBotOpenApi.doSendMsg(sendRequestPayload,msg);
+                        }
+                    }
                     //处理机器人逻辑
-                    return ResponseEntity.ok("true");
+                    return ResponseEntity.ok(isValid);
                 }
                 case 13 -> {
                     //验证签名
