@@ -80,26 +80,57 @@ public class BotController {
                             String content = d.getContent();
                             if ("查询电费".equals(content)) {
 
-                            } else if ("查询成绩".equals(content)) {
+                            } else if ("查询大一成绩".equals(content)) {
+                                String grade = hutOpenApi.getGrade("2022-2023-1");
+                                StringJoiner stringJoiner = resolveGrade(grade);
+                                String s1 = stringJoiner.toString();
+                                String grade1 = hutOpenApi.getGrade("2022-2023-2");
+                                StringJoiner stringJoiner1 = resolveGrade(grade1);
+                                String s2 = stringJoiner1.toString();
+
+                                msg = "大一上 \n"+ s1 +'\n'+"大一下" +'\n'+ s2;
+
+                            }else if("查询大二成绩".equals(content)) {
+                                String grade = hutOpenApi.getGrade("2023-2024-1");
+                                StringJoiner stringJoiner = resolveGrade(grade);
+                                String s1 = stringJoiner.toString();
+                                String grade1 = hutOpenApi.getGrade("2023-2024-2");
+                                StringJoiner stringJoiner1 = resolveGrade(grade1);
+                                String s2 = stringJoiner1.toString();
+
+                                msg = "大二上 \n"+ s1 +'\n'+"大二下" +'\n'+ s2;
+
 
                             } else if ("查询本学期成绩".equals(content)) {
                                 String nowGrade = hutOpenApi.getNowGrade();
-                                GradeResp gradeResp = JSON.parseObject(nowGrade, GradeResp.class);
-                                DataDTO data = gradeResp.getData().get(0);
-                                Set<String> gradeSet = data.getAchievement().stream().map(achievementDTO -> {
-                                    //课程名
-                                    String courseName = achievementDTO.getCourseName();
-                                    //成绩
-                                    String fraction = achievementDTO.getFraction();
-                                    return courseName + ":" + fraction;
-                                }).collect(Collectors.toSet());
-                                StringJoiner sj = new StringJoiner("\n");
-                                for (String grade : gradeSet) {
-                                    sj.add(grade);
-                                }
+                                StringJoiner sj = resolveGrade(nowGrade);
                                 msg = sj.toString();
-                                logger.info(msg);
+
                             }
+                            else if ("查询大三成绩".equals(content)) {
+                                String grade = hutOpenApi.getGrade("2024-2025-1");
+                                StringJoiner stringJoiner = resolveGrade(grade);
+                                String s1 = stringJoiner.toString();
+                                String grade1 = hutOpenApi.getGrade("2024-2025-2");
+                                StringJoiner stringJoiner1 = resolveGrade(grade1);
+                                String s2 = stringJoiner1.toString();
+
+                                msg = "大三上 \n"+ s1 +'\n'+"大三下" +'\n'+ s2;
+
+                            } else if("查询大四成绩".equals(content)) {
+                                String grade = hutOpenApi.getGrade("2025-2026-1");
+                                StringJoiner stringJoiner = resolveGrade(grade);
+                                String s1 = stringJoiner.toString();
+                                String grade1 = hutOpenApi.getGrade("2025-2026-2");
+                                StringJoiner stringJoiner1 = resolveGrade(grade1);
+                                String s2 = stringJoiner1.toString();
+
+                                msg = "大四上 \n"+ s1 +'\n'+"大四下" +'\n'+ s2;
+
+                            }
+
+                            msg = JSON.toJSONString(msg);
+                            logger.info(msg);
                             qQBotOpenApi.doSendMsg(sendRequestPayload,msg);
                         }
                     }
@@ -115,12 +146,29 @@ public class BotController {
                     ValidationResponse resp = new ValidationResponse(validationPayload.getPlain_token(), HexFormat.of().formatHex(signature));
                     return ResponseEntity.ok(resp);
                 }
-                default -> logger.info("未处理操作：" + JSON.toJSONString(payload));
+                default -> logger.info("未处理操作：{}", JSON.toJSONString(payload));
             }
         } catch (Exception e) {
             logger.error("验证失败：", e);
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
+    }
+
+    private static StringJoiner resolveGrade(String nowGrade) {
+        GradeResp gradeResp = JSON.parseObject(nowGrade, GradeResp.class);
+        DataDTO data = gradeResp.getData().get(0);
+        Set<String> gradeSet = data.getAchievement().stream().map(achievementDTO -> {
+            //课程名
+            String courseName = achievementDTO.getCourseName();
+            //成绩
+            String fraction = achievementDTO.getFraction();
+            return courseName + ":" + fraction;
+        }).collect(Collectors.toSet());
+        StringJoiner sj = new StringJoiner("\n");
+        for (String grade : gradeSet) {
+            sj.add(grade);
+        }
+        return sj;
     }
 
     public static boolean verifySignature(String signatureHex, String timestamp, byte[] httpBody, byte[] publicKeyBytes) {
