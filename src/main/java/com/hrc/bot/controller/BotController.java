@@ -77,10 +77,10 @@ public class BotController {
                             Payload<SendRequest> sendRequestPayload = JSON.parseObject(rawBody, new TypeReference<>() {
                             });
                             SendRequest d = sendRequestPayload.getD();
-                            String content = d.getContent();
+                            String content = d.getContent().trim();
                             if ("查询电费".equals(content)) {
 
-                            } else if ("查询大一成绩".equals(content)) {
+                            } else if ("查询大一成绩".equals(content) || "/grade1".equals(content)) {
                                 String grade = hutOpenApi.getGrade("2022-2023-1");
                                 StringJoiner stringJoiner = resolveGrade(grade);
                                 String s1 = stringJoiner.toString();
@@ -90,7 +90,7 @@ public class BotController {
 
                                 msg = "大一上 \n"+ s1 +'\n'+"大一下" +'\n'+ s2;
 
-                            }else if("查询大二成绩".equals(content)) {
+                            }else if("查询大二成绩".equals(content) || "/grade2".equals(content)) {
                                 String grade = hutOpenApi.getGrade("2023-2024-1");
                                 StringJoiner stringJoiner = resolveGrade(grade);
                                 String s1 = stringJoiner.toString();
@@ -107,7 +107,7 @@ public class BotController {
                                 msg = sj.toString();
 
                             }
-                            else if ("查询大三成绩".equals(content)) {
+                            else if ("查询大三成绩".equals(content) || "/grade3".equals(content)) {
                                 String grade = hutOpenApi.getGrade("2024-2025-1");
                                 StringJoiner stringJoiner = resolveGrade(grade);
                                 String s1 = stringJoiner.toString();
@@ -117,7 +117,7 @@ public class BotController {
 
                                 msg = "大三上 \n"+ s1 +'\n'+"大三下" +'\n'+ s2;
 
-                            } else if("查询大四成绩".equals(content)) {
+                            } else if("查询大四成绩".equals(content) || "/grade4".equals(content)) {
                                 String grade = hutOpenApi.getGrade("2025-2026-1");
                                 StringJoiner stringJoiner = resolveGrade(grade);
                                 String s1 = stringJoiner.toString();
