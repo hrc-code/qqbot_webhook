@@ -1,5 +1,9 @@
+test/
+*.http
 *.env
 *.envrc
+
+http-client.private.env.json
 
 .idea/
 
