@@ -14,6 +14,8 @@ import com.hrc.bot.entity.validate.ValidationRequest;
 import com.hrc.bot.entity.validate.ValidationResponse;
 import com.hrc.bot.openapi.HutOpenApi;
 import com.hrc.bot.openapi.QQBotOpenApi;
+import com.hrc.bot.tasks.ScheduledTasks;
+
 import jakarta.annotation.Resource;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
@@ -49,6 +51,9 @@ public class BotController {
     @Resource
     private QQBotOpenApi qQBotOpenApi;
 
+    @Resource
+    private ScheduledTasks scheduledTasks;
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Logger logger = LoggerFactory.getLogger(BotController.class);
@@ -61,6 +66,11 @@ public class BotController {
     public ResponseEntity<?> handleValidation(@RequestBody String rawBody,
                                               @RequestHeader("X-Signature-Ed25519") String sig,
                                               @RequestHeader("X-Signature-Timestamp") String timestamp) {
+        if (scheduledTasks.getRawBodySet().contains(rawBody)) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else {
+            scheduledTasks.getRawBodySet().add(rawBody);
+        }
         try {
             String seed = prepareSeed(BotConfig.APP_SECRET);
             KeyPair keyPair = generateEd25519KeyPair(seed.getBytes(StandardCharsets.UTF_8));
