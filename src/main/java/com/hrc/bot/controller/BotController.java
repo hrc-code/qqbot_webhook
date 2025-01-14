@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hrc.bot.config.BotConfig;
 import com.hrc.bot.entity.Payload;
+import com.hrc.bot.entity.hut.electricityx.resp.ElectricityResp;
 import com.hrc.bot.entity.hut.grade.resp.DataDTO;
 import com.hrc.bot.entity.hut.grade.resp.GradeResp;
 import com.hrc.bot.entity.sendrequest.SendRequest;
@@ -88,6 +89,16 @@ public class BotController {
                             SendRequest d = sendRequestPayload.getD();
                             String content = d.getContent().trim();
                             if ("查询电费".equals(content)) {
+                                String electricity = hutOpenApi.getElectricity();
+                                logger.info("电费查询结果:{}", electricity);
+                                ElectricityResp electricityResp = JSON.parseObject(electricity, ElectricityResp.class);
+                                Boolean success = electricityResp.getSuccess();
+
+                                if (success) {
+                                    msg = electricityResp.getResultData().getEledetail();
+                                } else {
+                                    msg = "重新登录";
+                                }
 
                             } else if ("查询大一成绩".equals(content) || "/grade1".equals(content)) {
                                 String grade = hutOpenApi.getGrade("2022-2023-1");
