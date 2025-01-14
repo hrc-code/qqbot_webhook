@@ -16,7 +16,6 @@ import com.hrc.bot.entity.validate.ValidationResponse;
 import com.hrc.bot.openapi.HutOpenApi;
 import com.hrc.bot.openapi.QQBotOpenApi;
 import com.hrc.bot.tasks.ScheduledTasks;
-
 import jakarta.annotation.Resource;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
@@ -88,7 +87,7 @@ public class BotController {
                             });
                             SendRequest d = sendRequestPayload.getD();
                             String content = d.getContent().trim();
-                            if ("查询电费".equals(content)) {
+                            if ("查询电费".equals(content) || "/df".equals(content)) {
                                 String electricity = hutOpenApi.getElectricity();
                                 logger.info("电费查询结果:{}", electricity);
                                 ElectricityResp electricityResp = JSON.parseObject(electricity, ElectricityResp.class);
