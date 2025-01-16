@@ -1,3 +1,7 @@
+deploy.sh
+*.ipynb
+.vscode/
+run.sh
 *.pem
 test/
 *.http
